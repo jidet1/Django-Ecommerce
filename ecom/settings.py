@@ -30,8 +30,8 @@ SECRET_KEY = 'django-insecure-&ztto8xk#-qya&uq&mc9x3-*n-2c1+y%n%z4b50ori=0heb)1!
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['django-ecommerce-production-3a9c.up.railway.app', 'https://django-ecommerce-production-3a9c.up.railway.app', 'localhost', '127.0.0.1']
-CSRF_TRUSTED_ORIGINS = ['https://django-ecommerce-production-3a9c.up.railway.app']
+ALLOWED_HOSTS = ['django-ecommerce-production-1db6.up.railway.app', 'https://django-ecommerce-production-1db6.up.railway.app']
+CSRF_TRUSTED_ORIGINS = ['https://django-ecommerce-production-1db6.up.railway.app']
 
 
 # Application definition
@@ -84,53 +84,18 @@ WSGI_APPLICATION = 'ecom.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         #'ENGINE': 'django.db.backends.sqlite3',
-#         #'NAME': BASE_DIR / 'db.sqlite3',
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'railway',
-#         'USER': 'postgres',
-#         'PASSWORD': os.environ['DB_PASSWORD_YO'],
-#         'HOST': 'trolley.proxy.rlwy.net',
-#         'PORT': '40235',
-#     }
-# }
-
-import os
-from pathlib import Path
-from urllib.parse import urlparse
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-# Load environment variables with python-dotenv if you want (optional)
-from dotenv import load_dotenv
-load_dotenv()
-
-# Database configuration using DATABASE_URL from Railway or local fallback
-DATABASE_URL = os.getenv('DATABASE_URL')
-
-if DATABASE_URL:
-    url = urlparse(DATABASE_URL)
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': url.path.lstrip('/'),
-            'USER': url.username,
-            'PASSWORD': url.password,
-            'HOST': url.hostname,
-            'PORT': url.port or '',
-        }
+DATABASES = {
+    'default': {
+        #'ENGINE': 'django.db.backends.sqlite3',
+        #'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'railway',
+        'USER': 'postgres',
+        'PASSWORD': os.environ['DB_PASSWORD_YO'],
+        'HOST': 'trolley.proxy.rlwy.net',
+        'PORT': '40235',
     }
-else:
-    # Local development fallback - SQLite
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-
+}
 
 
 # Password validation
@@ -172,7 +137,7 @@ STATICFILES_DIRS = ['static/']
 
 #Static for whitenoise
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage' 
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media') 
