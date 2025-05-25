@@ -288,3 +288,11 @@ def checkout(request):
 
 def payment_success(request):
     return render(request, 'payment/payment_success.html', {})
+
+
+def confirm_payment(request, pk):
+    cart = Cart.objects.get(id=pk)
+    cart.completed = True
+    cart.save()
+    messages.success(request, "Payment made successfully")
+    return redirect('home')
