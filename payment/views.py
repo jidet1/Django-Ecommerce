@@ -403,7 +403,7 @@ def payment_success(request):
             order.save()
 
         # Clear session cart
-        request.session.pop('cart', None)
+        request.session.pop('session_key', None)
         request.session.modified = True
         Cart(request)  # Reinitialize to ensure clean state
 
