@@ -389,30 +389,33 @@ def payment_page(request):
 
 def payment_success(request):
     tx_ref = request.GET.get('tx_ref')
+    
     response = requests.get(
         f"https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref={tx_ref}",
         headers={"Authorization": f"Bearer {settings.FLUTTERWAVE_SECRET_KEY}"}
     )
 
     if response.status_code == 200 and response.json().get('status') == 'success':
-        # Update order status
+        # Fetch the order
         order = Order.objects.filter(tx_ref=tx_ref).first()
         if order:
+            # Mark as shipped
             order.shipped = True
             order.date_shipped = timezone.now()
             order.save()
 
-        # Clear session cart data
-        for key in ['cart', 'order_total', 'customer_email', 'customer_name', 'shipping_id', 'order_id']:
-            request.session.pop(key, None)
+            # Clear the cart session keys
+            for key in ['cart', 'order_total', 'customer_email', 'customer_name', 'shipping_id', 'order_id']:
+                if key in request.session:
+                    del request.session[key]
 
-        request.session.modified = True
+            request.session.modified = True
+
+            # Clear cart in Profile model
+            if request.user.is_authenticated:
+                Profile.objects.filter(user=request.user).update(old_cart="")
 
         return render(request, 'payment/payment_success.html', {'tx_ref': tx_ref})
     else:
         return render(request, 'payment/error.html', {'error': 'Payment verification failed'})
-
- 
-
-
 
