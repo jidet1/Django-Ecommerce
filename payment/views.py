@@ -9,8 +9,10 @@ from store.models import Product, Profile
 import time
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
+from django.utils import timezone
 import requests
 import logging
+
 
 
 def orders(request, pk):
@@ -391,23 +393,26 @@ def payment_success(request):
         f"https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref={tx_ref}",
         headers={"Authorization": f"Bearer {settings.FLUTTERWAVE_SECRET_KEY}"}
     )
-    if response.status_code == 200 and response.json()['status'] == 'success':
-        # Update order status (if using an Order model)
-        # Example: Order.objects.filter(tx_ref=tx_ref).update(status='paid')
-        # Clear cart
-        request.session.pop('cart', None)
-        # Clear cart and related session data
-        request.session.pop('order_total', None)
-        request.session.pop('customer_email', None)
-        request.session.pop('customer_name', None)
-        request.session.pop('shipping_id', None)
-        request.session.pop('order_id', None)
 
-        #Ensure Django saves session change
-        request.session.modified = True 
+    if response.status_code == 200 and response.json().get('status') == 'success':
+        # Update order status
+        order = Order.objects.filter(tx_ref=tx_ref).first()
+        if order:
+            order.shipped = True
+            order.date_shipped = timezone.now()
+            order.save()
+
+        # Clear session cart data
+        for key in ['cart', 'order_total', 'customer_email', 'customer_name', 'shipping_id', 'order_id']:
+            request.session.pop(key, None)
+
+        request.session.modified = True
 
         return render(request, 'payment/payment_success.html', {'tx_ref': tx_ref})
     else:
         return render(request, 'payment/error.html', {'error': 'Payment verification failed'})
-    
+
  
+
+
+
