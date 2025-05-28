@@ -51,7 +51,7 @@
             amount: paymentData.amount,
             currency: "USD",
             payment_options: "card,ussd,banktransfer",
-            redirect_url: "https://django-ecommerce-production-3a9c.up.railway.app/payment_success/?tx_ref={{ order_tx_ref|safe }}",
+            redirect_url: "/payment_success/?tx_ref={{ order_tx_ref|safe }}",
             customer: {
                 email: paymentData.email,
                 name: paymentData.name || "Guest",
