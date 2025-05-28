@@ -57,7 +57,7 @@
                 name: paymentData.name || "Guest",
             },
             onSuccess: function(transaction) {
-                window.location.href = "/payment_success/?tx_ref=" + transaction.tx_ref;
+                window.location.href = "/https://django-ecommerce-production-3a9c.up.railway.app/payment_success/?tx_ref=" + transaction.tx_ref;
             },
 
             onclose: function () {
