@@ -396,12 +396,16 @@ def payment_success(request):
         # Example: Order.objects.filter(tx_ref=tx_ref).update(status='paid')
         # Clear cart
         request.session.pop('cart', None)
-        # Clear session data
+        # Clear cart and related session data
         request.session.pop('order_total', None)
         request.session.pop('customer_email', None)
         request.session.pop('customer_name', None)
         request.session.pop('shipping_id', None)
         request.session.pop('order_id', None)
+
+        #Ensure Django saves session change
+        request.session.modified = True 
+
         return render(request, 'payment/payment_success.html', {'tx_ref': tx_ref})
     else:
         return render(request, 'payment/error.html', {'error': 'Payment verification failed'})
