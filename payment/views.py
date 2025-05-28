@@ -399,7 +399,7 @@ def payment_success(request):
         # Update order if it exists
         order = Order.objects.filter(tx_ref=tx_ref).first()
         if order:
-            order.shipped = True
+            order.shipped = False
             order.date_shipped = timezone.now()
             order.save()
 
