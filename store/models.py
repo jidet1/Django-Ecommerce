@@ -52,13 +52,13 @@ class Customer(models.Model):
 #All of our Products
 class Product(models.Model):
     name = models.CharField(max_length=50)
-    price = models.DecimalField(default=0.0, max_digits=6, decimal_places=2)
+    price = models.DecimalField(default=0.0, max_digits=10, decimal_places=2)
     description = models.CharField(max_length=500, default='', blank=True, null=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, default=1)
     image = models.ImageField(upload_to='uploads/products')
 
     is_sale = models.BooleanField(default=False)
-    sale_price = models.DecimalField(default=0.0, max_digits=6, decimal_places=2)
+    sale_price = models.DecimalField(default=0.0, max_digits=10, decimal_places=2)
 
     def __str__(self):
         return self.name

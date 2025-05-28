@@ -37,15 +37,15 @@
                                     </div>
                                     <!-- Product price-->
                                     <strike>
-                                        ${{ product.price }}
+                                        ₦{{ product.price }}
                                     </strike>
                                     &nbsp;
-                                     ${{ product.sale_price }}
+                                     ₦{{ product.sale_price }}
                                 </div>
 
         {% else %}
         
-            ${{ product.price }}
+            ₦{{ product.price }}
             <br/>
         {% endif %}
         <br/><br/>
@@ -91,7 +91,7 @@
 
     {% endfor %}
     <div align="right">
-    <h3>Total: ${{ totals }}</h3>
+    <h3>Total: ₦{{ totals }}</h3>
       <a href="{% url 'checkout' %}" class="btn btn-success">Checkout</a>
     </div>
     <br/><br/><br/>
@@ -99,67 +99,53 @@
     There is nothing in Your Cart...
 <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
 {% endif %}
-  
-<script>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+ <script>
 // Update Cart
-//check if button pressed
 $(document).on('click', '.update-cart', function(e){
   e.preventDefault();
-  //grab product id
   var productid = $(this).data('index');
   $.ajax({
     type: 'POST',
-    url: '{% url 'cart_update' %}',
+    url: '{% url "cart_update" %}',
     data: {
       product_id: $(this).data('index'),
       product_qty: $('#select' + productid + ' option:selected').text(),
       csrfmiddlewaretoken: '{{ csrf_token }}',
       action: 'post'
     }, 
-
     success: function(json){
-      //console.log(json)
-      //document.getElementById("cart_quantity").textContent = json.qty
       location.reload();
     },
-
-    error: function(xhr, errmg, err){
-      
+    error: function(xhr, errmsg, err){
+      console.log(xhr.status + ": " + xhr.responseText);
     }
-
-  }); //add to cart without refreshing the page
-
-})
+  });
+});
 
 // Delete Product from Cart
-//check if button pressed
 $(document).on('click', '.delete-product', function(e){
   e.preventDefault();
-  //grab product id
-  //var productid = $(this).data('index');
   $.ajax({
     type: 'POST',
-    url: '{% url 'cart_delete' %}',
+    url: '{% url "cart_delete" %}',
     data: {
       product_id: $(this).data('index'),
       csrfmiddlewaretoken: '{{ csrf_token }}',
       action: 'post'
     }, 
-
     success: function(json){
-      //console.log(json)
-      //document.getElementById("cart_quantity").textContent = json.qty
       location.reload();
     },
-
-    error: function(xhr, errmg, err){
-      
+    error: function(xhr, errmsg, err){
+      console.log(xhr.status + ": " + xhr.responseText);
     }
-
-  }); //add to cart without refreshing the page
-
-})
-
+  });
+});
 </script>
+
 
 {% endblock %}

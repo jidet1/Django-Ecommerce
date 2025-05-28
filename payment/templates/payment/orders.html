@@ -12,7 +12,7 @@
                         <h3> Order </h3>
 <div class="card">
   <div class="card-header">
-    Order {{ order.id }} - ${{ order.amount_paid }}
+    Order {{ order.id }} - ₦{{ order.amount_paid }}
   </div>
   <div class="card-body">
   Email: {{ order.email }}<br/>
@@ -26,7 +26,7 @@
     </pre>
   
     {% for item in order_items %}
-        {{ item.product }} - {{ item.quantity }} - ${{ item.price }}<br/>
+        {{ item.product }} - {{ item.quantity }} - ₦{{ item.price }}<br/>
 
     {% endfor %}
     <br/><br/>

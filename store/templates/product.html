@@ -25,15 +25,15 @@
                                     </div>
                                     <!-- Product price-->
                                     <strike>
-                                        ${{ product.price }}
+                                        ₦{{ product.price }}
                                     </strike>
                                     &nbsp;
-                                     ${{ product.sale_price }}
+                                     ₦{{ product.sale_price }}
                                 </div>
 
         {% else %}
         
-            ${{ product.price }}
+            ₦{{ product.price }}
         {% endif %}
             <br/><br/>
             <div class="row justify-content-center">
@@ -66,14 +66,14 @@
 
 <script>
 //check if button pressed
-$(document).on('click', '#add-cart', function(e){
+₦(document).on('click', '#add-cart', function(e){
   e.preventDefault();
-  $.ajax({
+  ₦.ajax({
     type: 'POST',
     url: '{% url 'cart_add' %}',
     data: {
-      product_id: $('#add-cart').val(),
-      product_qty: $('#qty-cart option:selected').text(),
+      product_id: ₦('#add-cart').val(),
+      product_qty: ₦('#qty-cart option:selected').text(),
       csrfmiddlewaretoken: '{{ csrf_token }}',
       action: 'post'
     }, 

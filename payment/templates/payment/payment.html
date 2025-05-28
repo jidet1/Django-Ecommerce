@@ -7,7 +7,7 @@
 </head>
 <body>
     <h2>Pay with Flutterwave</h2>
-    <p>Total: ${{ order_total|floatformat:2 }}</p>
+    <p>Total: ₦{{ order_total|floatformat:2 }}</p>
     <p>Email: {{ customer_email }}</p>
     <p>Name: {{ customer_name }}</p>
     <button type="button" onclick="makePayment()">Pay Now</button>
@@ -31,7 +31,7 @@
         alert("Invalid amount.");
         return;
     }
-    if (paymentData.amount > 1000) {
+    if (paymentData.amount > 50000) {
         alert("Amount exceeds limit.");
         return;
     }
@@ -49,7 +49,7 @@
             public_key: paymentData.public_key,
             tx_ref: paymentData.tx_ref,
             amount: paymentData.amount,
-            currency: "USD",
+            currency: "NGN",
             payment_options: "card,ussd,banktransfer",
             redirect_url: "/payment_success/?tx_ref={{ order_tx_ref|safe }}",
             customer: {
