@@ -1,0 +1,74 @@
+<!-- templates/payment.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flutterwave Payment</title>
+    <script src="https://checkout.flutterwave.com/v3.js"></script>
+</head>
+<body>
+    <h2>Pay with Flutterwave</h2>
+    <p>Total: ${{ order_total|floatformat:2 }}</p>
+    <p>Email: {{ customer_email }}</p>
+    <p>Name: {{ customer_name }}</p>
+    <button type="button" onclick="makePayment()">Pay Now</button>
+    <script>
+        function makePayment() {
+            const paymentData = {
+                public_key: "{{ flutterwave_public_key|safe }}",
+                tx_ref: "txref-" + Date.now(),
+                amount: {{ order_total|floatformat:2|default:0 }},
+                email: "{{ customer_email|safe }}",
+                name: "{{ customer_name|safe }}"
+            };
+            console.log("Payment data:", paymentData);
+
+            // Validate data
+            if (!paymentData.public_key || paymentData.public_key.trim() === "") {
+                alert("Missing or invalid public key. Please contact support.");
+                return;
+            }
+            if (!paymentData.amount || paymentData.amount <= 0) {
+                alert("Invalid amount. Please check your cart.");
+                return;
+            }
+            if (!paymentData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(paymentData.email)) {
+                alert("Invalid email address.");
+                return;
+            }
+            if (!paymentData.tx_ref) {
+                alert("Missing transaction reference.");
+                return;
+            }
+
+            try {
+                FlutterwaveCheckout({
+                    public_key: paymentData.public_key,
+                    tx_ref: paymentData.tx_ref,
+                    amount: paymentData.amount,
+                    currency: "USD",
+                    payment_options: "card,ussd,banktransfer",
+                    customer: {
+                        email: paymentData.email,
+                        name: paymentData.name || "Guest",
+                    },
+                    callback: function (data) {
+                        console.log("Payment callback:", data);
+                        window.location.href = "/payment_success/?tx_ref=" + data.tx_ref;
+                    },
+                    onclose: function () {
+                        console.log("Payment modal closed");
+                    },
+                    customizations: {
+                        title: "My Django Store",
+                        description: "Payment for items in cart",
+                        logo: "static/assets/josh's store logo.jpg",
+                    },
+                });
+            } catch (error) {
+                console.error("FlutterwaveCheckout error:", error);
+                alert("Payment initialization failed: " + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

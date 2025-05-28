@@ -80,38 +80,4 @@
 
 <br/><br/>
 
-<script src="https://checkout.flutterwave.com/v3.js"></script>
-
-<script>
-
-let cart_totals = "{{cart.cart_total}}"
-let product_id = "{{product.id}}"
-
-
-function makePayment() {
-	FlutterwaveCheckout({
-		public_key: 'FLWPUBK_TEST-510aecf7662be90f824f035f101aa0a3-X',
-		tx_ref: 'titanic-48981487343MDI0NzMx',
-		amount: cart_totals,
-		currency: 'USD',
-		payment_options: 'card, mobilemoneyghana, ussd',
-		redirect_url: 'https://django-ecommerce-production-3a9c.up.railway.app/confirm_payment'+product_id,
-		meta: {
-			consumer_id: 23,
-			consumer_mac: '92a3-912ba-1192a',
-		},
-		customer: {
-			email: 'rose@unsinkableship.com',
-			phone_number: '08102909304',
-			name: 'Rose DeWitt Bukater',
-		},
-		customizations: {
-			title: "Josh's Store",
-			description: 'Buy with ease',
-			logo: 'https://www.logolynx.com/images/logolynx/22/2239ca38f5505fbfce7e55bbc0604386.jpeg',
-		},
-	});
-}
-
-</script>
 {% endblock %}

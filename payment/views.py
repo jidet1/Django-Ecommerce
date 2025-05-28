@@ -6,7 +6,12 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib import messages
 from store.models import Product, Profile
-import datetime
+import time
+from django.contrib.auth.decorators import login_required
+from django.conf import settings
+import requests
+import logging
+
 
 def orders(request, pk):
     if request.user.is_authenticated and request.user.is_superuser:
@@ -217,50 +222,100 @@ def process_order(request):
         messages.error(request, "Access Denied! Please login to continue or register if you do not have an account.")
         return redirect('home')
 
+
+logger = logging.getLogger(__name__)
+
 def billing_info(request):
     if request.method == "POST":
-        # Get the cart
+        # Get cart data
         cart = Cart(request)
-        cart_products = cart.get_prods 
-        quantites = cart.get_quants
+        cart_products = cart.get_prods()
+        quantities = cart.get_quants()
         totals = cart.cart_total()
 
-        #Create a session for the shipping info
-        my_shipping = request.POST
-        request.session['my_shipping'] = my_shipping
+        # Validate cart
+        if not cart_products or totals <= 0:
+            logger.error(f"Invalid cart: products={len(cart_products)}, total={totals}")
+            messages.error(request, "Your cart is empty or has an invalid total. Please add items.")
+            return redirect('cart_summary')
 
-        # Check if the user is authenticated
-        if request.user.is_authenticated:
-            #Get billing info from the form
-            billing_form = PaymentForm()
+        # Validate shipping form
+        shipping_form = ShippingForm(request.POST)
+        if shipping_form.is_valid():
+            # Save shipping info
+            shipping_info = shipping_form.save()
+            
+            # Format shipping address
+            shipping_address = (
+                f"{shipping_info.shipping_full_name}, "
+                f"{shipping_info.shipping_address1}, "
+                f"{shipping_info.shipping_address2 or ''}, "
+                f"{shipping_info.shipping_city}, "
+                f"{shipping_info.shipping_state or ''}, "
+                f"{shipping_info.shipping_zip_code or ''}, "
+                f"{shipping_info.shipping_country}"
+            ).replace(", ,", ",").strip(", ")
 
-            return render(request, "payment/billing_info.html", {
-            'cart_products': cart_products,
-            'quantites': quantites,
-            'totals': totals,
-            'shipping_info': request.POST,
-            'billing_form': billing_form,
-            })
+            # Validate email
+            email = shipping_form.cleaned_data.get('shipping_email')
+            if not email or not '@' in email:
+                logger.error(f"Invalid email: {email}")
+                messages.error(request, "Please provide a valid email address.")
+                return render(request, 'payment/check_out.html', {
+                    'cart_products': cart_products,
+                    'quantities': quantities,
+                    'totals': totals,
+                    'shipping_form': shipping_form
+                })
+
+            # Create order
+            try:
+                order = Order.objects.create(
+                    user=request.user if request.user.is_authenticated else None,
+                    full_name=shipping_form.cleaned_data.get('shipping_full_name', ''),
+                    email=email,
+                    shipping_address=shipping_address,
+                    amount_paid=float(totals),
+                    tx_ref="txref-" + str(int(time.time()))
+                )
+                logger.debug(f"Created order: id={order.id}, tx_ref={order.tx_ref}, amount_paid={order.amount_paid}, email={order.email}")
+                
+                # Create OrderItem entries
+                for product, qty in zip(cart_products, quantities.values()):
+                    price = float(product.sale_price if product.is_sale else product.price)
+                    OrderItem.objects.create(
+                        user=request.user if request.user.is_authenticated else None,
+                        order=order,
+                        product=product,
+                        quantity=qty,
+                        price=price
+                    )
+                
+                # Store order_id in session
+                request.session['order_id'] = order.id
+                return redirect('payment_page')  # Redirects to /payment/
+            except Exception as e:
+                logger.error(f"Order creation failed: {str(e)}")
+                messages.error(request, "Failed to create order. Please try again.")
+                return render(request, 'payment/check_out.html', {
+                    'cart_products': cart_products,
+                    'quantities': quantities,
+                    'totals': totals,
+                    'shipping_form': shipping_form
+                })
         else:
-            billing_form = PaymentForm()
-            return render(request, "payment/billing_info.html", {
-            'cart_products': cart_products,
-            'quantites': quantites,
-            'totals': totals,
-            'shipping_info': request.POST,
-            'billing_form': billing_form,
-            })
-
-        shipping_form = request.POST 
-        return render(request, "payment/billing_info.html", {
-            'cart_products': cart_products,
-            'quantites': quantites,
-            'totals': totals,
-            'shipping_form': shipping_form
+            logger.debug(f"Form errors: {shipping_form.errors}")
+            messages.error(request, "Please correct the errors in the form.")
+            return render(request, 'payment/check_out.html', {
+                'cart_products': cart_products,
+                'quantities': quantities,
+                'totals': totals,
+                'shipping_form': shipping_form
             })
     else:
-        messages.error(request, "Access Denied! Please login to continue or register if you do not have an account.")
+        messages.error(request, "Access Denied! Please complete the checkout process.")
         return redirect('home')
+    
 
 def checkout(request):
     # Get the cart
@@ -286,13 +341,55 @@ def checkout(request):
         'shipping_form': shipping_form
     })
 
+
+
+
+
+logger = logging.getLogger(__name__)
+def payment_page(request):
+    order_id = request.session.get('order_id')
+    if not order_id:
+        logger.error("No order_id in session")
+        messages.error(request, "No order found. Please complete the checkout process.")
+        return redirect('home')
+
+    try:
+        order = Order.objects.get(id=order_id)
+        if order.amount_paid <= 0:
+            logger.error(f"Invalid order amount: {order.amount_paid}")
+            messages.error(request, "Invalid order amount. Please check your cart.")
+            return redirect('cart_summary')
+        if not order.email or not '@' in order.email:
+            logger.error(f"Invalid order email: {order.email}")
+            messages.error(request, "Invalid email address. Please provide a valid email.")
+            return redirect('home')
+        
+        logger.debug(f"Order data: id={order.id}, amount_paid={order.amount_paid}, email={order.email}, full_name={order.full_name}")
+        return render(request, 'payment/payment.html', {  
+            'order_total': float(order.amount_paid),
+            'customer_email': order.email,
+            'customer_name': order.full_name or 'Guest',
+            'flutterwave_public_key': settings.FLUTTERWAVE_PUBLIC_KEY
+        })
+    except Order.DoesNotExist:
+        logger.error(f"Order not found: order_id={order_id}")
+        messages.error(request, "Order does not exist. Please try again.")
+        return redirect('home')
+
 def payment_success(request):
-    return render(request, 'payment/payment_success.html', {})
-
-
-def confirm_payment(request, pk):
-    cart = Cart.objects.get(id=pk)
-    cart.completed = True
-    cart.save()
-    messages.success(request, "Payment made successfully")
-    return redirect('home')
+    tx_ref = request.GET.get('tx_ref')
+    response = requests.get(
+        f"https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref={tx_ref}",
+        headers={"Authorization": f"Bearer {settings.FLUTTERWAVE_SECRET_KEY}"}
+    )
+    if response.status_code == 200 and response.json()['status'] == 'success':
+        # Update order status (if using an Order model)
+        # Example: Order.objects.filter(tx_ref=tx_ref).update(status='paid')
+        # Clear session data
+        request.session.pop('order_total', None)
+        request.session.pop('customer_email', None)
+        request.session.pop('customer_name', None)
+        request.session.pop('shipping_id', None)
+        return render(request, 'success.html', {'tx_ref': tx_ref})
+    else:
+        return render(request, 'error.html', {'error': 'Payment verification failed'})

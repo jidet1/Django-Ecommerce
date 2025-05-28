@@ -1,10 +1,10 @@
+# payment/models.py
 from django.db import models
 from django.contrib.auth.models import User
-from store.models import Product   
-from django.db.models.signals import post_save, pre_save #to create a user profile 
+from store.models import Product
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 import datetime
-
 
 class ShippingAddress(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
@@ -17,25 +17,19 @@ class ShippingAddress(models.Model):
     shipping_zip_code = models.CharField(max_length=20, blank=True, null=True)
     shipping_country = models.CharField(max_length=100)
 
-
-    #Do no plurailize the model name(Address)
     class Meta:
         verbose_name_plural = 'Shipping Address'
+
     def __str__(self):
         return f"Shipping Address for {str(self.user)}"
-    
 
-#Create a shipping address when a new user is created
 def create_shipping(sender, instance, created, **kwargs):
     if created:
-        user_shipping = ShippingAddress(user=instance) 
+        user_shipping = ShippingAddress(user=instance)
         user_shipping.save()
 
-#Automatically create a user profile when a new user is created
 post_save.connect(create_shipping, sender=User)
 
-    
-#Order model
 class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     full_name = models.CharField(max_length=255)
@@ -45,18 +39,14 @@ class Order(models.Model):
     date_ordered = models.DateTimeField(auto_now_add=True)
     shipped = models.BooleanField(default=False)
     date_shipped = models.DateTimeField(blank=True, null=True)
+    tx_ref = models.CharField(max_length=50, unique=True, blank=True, null=True)  # Added for Flutterwave
 
-    
-
-#Too see order in admin area
     def __str__(self):
         if self.user:
             return f"Order - {self.id} by {self.user.username}"
         else:
             return f"Order - {self.id} (No user)"
-        
 
-#Automatically set the date shipped when the order is marked as shipped
 @receiver(pre_save, sender=Order)
 def set_date_shipped(sender, instance, **kwargs):
     if instance.pk:
@@ -65,8 +55,6 @@ def set_date_shipped(sender, instance, **kwargs):
         if instance.shipped and not obj.shipped:
             instance.date_shipped = now
 
-
-#OrderItem model
 class OrderItem(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
@@ -74,7 +62,5 @@ class OrderItem(models.Model):
     quantity = models.PositiveBigIntegerField(default=1)
     price = models.DecimalField(max_digits=10, decimal_places=2)
 
-
-    #To see order item in admin area
     def __str__(self):
         return f"OrderItem {self.id} for Order {self.order.id}"

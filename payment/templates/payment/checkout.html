@@ -55,18 +55,11 @@
                         </div>
                         <div class="card-body">
                             <form method="POST" action="{% url 'billing_info' %}">
-                                {% csrf_token %}
-                                
-                              
-                            {{ shipping_form.as_p }}
-                            <br/>
-                             
-                            
-                        </div>
-                        </div>
-                        <br/>
-                        <button type="submit" class="btn btn-primary">Continue to Payment</button>
-                        </form>
+    {% csrf_token %}
+    {{ shipping_form.as_p }}
+    <input type="hidden" name="order_total" value="{{ totals }}">
+    <button type="submit">Pay Now</button>
+</form>
                         </div>
                     </div>
             </div>

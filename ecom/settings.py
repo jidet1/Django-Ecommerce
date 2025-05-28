@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-&ztto8xk#-qya&uq&mc9x3-*n-2c1+y%n%z4b50ori=0heb)1!
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['django-ecommerce-production-3a9c.up.railway.app', 'https://django-ecommerce-production-3a9c.up.railway.app']
+ALLOWED_HOSTS = ['django-ecommerce-production-3a9c.up.railway.app', 'https://django-ecommerce-production-3a9c.up.railway.app', 'localhost', '127.0.0.1']
 CSRF_TRUSTED_ORIGINS = ['https://django-ecommerce-production-3a9c.up.railway.app']
 
 
@@ -146,3 +146,25 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+
+FLUTTERWAVE_PUBLIC_KEY = "FLWPUBK_TEST-510aecf7662be90f824f035f101aa0a3-X   "
+
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+    },
+}
