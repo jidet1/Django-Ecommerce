@@ -6,11 +6,12 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib import messages
 from store.models import Product, Profile
-import time
+import time, datetime
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.utils import timezone
 import requests
+from django.db.models import Q
 import logging
 
 
@@ -61,7 +62,7 @@ from .models import Order
 
 def not_shipped_dash(request):
     if request.user.is_authenticated and request.user.is_superuser:
-        orders = Order.objects.filter(shipped=False)
+        orders = Order.objects.filter(Q(shipped=False) | Q(shipped__isnull=True))
 
         if request.method == 'POST':
             status = request.POST.get('shipping_status')
@@ -395,7 +396,7 @@ def payment_success(request):
     )
 
     if response.status_code == 200 and response.json().get('status') == 'success':
-        # Update order
+        # Update order if it exists
         order = Order.objects.filter(tx_ref=tx_ref).first()
         if order:
             order.shipped = True
@@ -405,7 +406,13 @@ def payment_success(request):
         # Clear session cart
         request.session.pop('session_key', None)
         request.session.modified = True
-        Cart(request)  # Reinitialize to ensure clean state
+
+        # Clear cart stored in Profile for logged-in users
+        if request.user.is_authenticated:
+            Profile.objects.filter(user=request.user).update(old_cart="")
+
+        # Reinitialize cart to reset frontend cache
+        Cart(request)
 
         return render(request, 'payment/payment_success.html', {'tx_ref': tx_ref})
     else:
