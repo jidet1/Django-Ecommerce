@@ -407,6 +407,6 @@ def payment_success(request):
         request.session.modified = True
         Cart(request)  # Reinitialize to ensure clean state
 
-        return redirect('cart_summary')  # force cart page refresh
+        return render(request, 'payment/payment_success.html', {'tx_ref': tx_ref})
     else:
         return render(request, 'payment/error.html', {'error': 'Payment verification failed'})
