@@ -51,11 +51,15 @@
             amount: paymentData.amount,
             currency: "NGN",
             payment_options: "card,ussd,banktransfer",
-            redirect_url: "/payment_success/?tx_ref={{ order_tx_ref|safe }}",
+            redirect_url: "{{ request.build_absolute_uri|cut:request.get_full_path }}payment_success/?tx_ref={{ order_tx_ref|safe }}",
             customer: {
                 email: paymentData.email,
                 name: paymentData.name || "Guest",
             },
+            onSuccess: function(transaction) {
+                window.location.href = "/payment_success/?tx_ref=" + transaction.tx_ref;
+            },
+
             onclose: function () {
                 console.log("Payment modal closed");
             },

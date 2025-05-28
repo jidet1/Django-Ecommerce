@@ -64,16 +64,19 @@
  <br/><br/> <br/><br/> <br/><br/>  <br/><br/> <br/><br/> <br/><br/>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
 <script>
 //check if button pressed
-₦(document).on('click', '#add-cart', function(e){
+$(document).on('click', '#add-cart', function(e){
   e.preventDefault();
-  ₦.ajax({
+  $.ajax({
     type: 'POST',
     url: '{% url 'cart_add' %}',
     data: {
-      product_id: ₦('#add-cart').val(),
-      product_qty: ₦('#qty-cart option:selected').text(),
+      product_id: $('#add-cart').val(),
+      product_qty: $('#qty-cart option:selected').text(),
       csrfmiddlewaretoken: '{{ csrf_token }}',
       action: 'post'
     }, 
