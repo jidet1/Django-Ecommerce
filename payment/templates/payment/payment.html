@@ -1,4 +1,4 @@
-<!-- templates/payment.html -->
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -15,10 +15,12 @@
         function makePayment() {
             const paymentData = {
                 public_key: "{{ flutterwave_public_key|safe }}",
-                tx_ref: "txref-" + Date.now(),
+                tx_ref: "{{ order_tx_ref|safe }}",
                 amount: {{ order_total|floatformat:2|default:0 }},
                 email: "{{ customer_email|safe }}",
                 name: "{{ customer_name|safe }}"
+                redirect_url: "https://django-ecommerce-production-3a9c.up.railway.app/payment_success/?tx_ref={{ order_tx_ref|safe }}",
+
             };
             console.log("Payment data:", paymentData);
 
@@ -29,6 +31,10 @@
             }
             if (!paymentData.amount || paymentData.amount <= 0) {
                 alert("Invalid amount. Please check your cart.");
+                return;
+            }
+            if (paymentData.amount > 1000) {
+                alert("Amount exceeds USD 1,000. Contact support to increase your transaction limit.");
                 return;
             }
             if (!paymentData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(paymentData.email)) {
@@ -47,21 +53,31 @@
                     amount: paymentData.amount,
                     currency: "USD",
                     payment_options: "card,ussd,banktransfer",
+                    redirect_url: "/payment_success/?tx_ref=" + "{{ order_tx_ref|safe }}",
                     customer: {
                         email: paymentData.email,
                         name: paymentData.name || "Guest",
                     },
-                    callback: function (data) {
-                        console.log("Payment callback:", data);
-                        window.location.href = "/payment_success/?tx_ref=" + data.tx_ref;
-                    },
+                    callback: function (response) {
+                    if (
+                        response.status === "successful" &&
+                        response.transaction_id &&
+                        response.tx_ref
+                    ) {
+                        // Redirect to success page
+                        window.location.href = "/payment_success/";
+                    } else {
+                        alert("Payment was not successful.");
+                    }
+                },
+
                     onclose: function () {
                         console.log("Payment modal closed");
                     },
                     customizations: {
                         title: "My Django Store",
                         description: "Payment for items in cart",
-                        logo: "static/assets/josh's store logo.jpg",
+                        logo: "static/assets/store-logo.jpg",
                     },
                 });
             } catch (error) {

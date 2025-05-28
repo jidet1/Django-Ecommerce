@@ -13,6 +13,7 @@ import dj_database_url
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -150,7 +151,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 FLUTTERWAVE_PUBLIC_KEY = "FLWPUBK_TEST-510aecf7662be90f824f035f101aa0a3-X   "
-
+FLUTTERWAVE_SECRET_KEY = config('FLUTTERWAVE_SECRET_KEY')
 
 
 LOGGING = {

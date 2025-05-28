@@ -270,16 +270,20 @@ def billing_info(request):
 
             # Create order
             try:
+                tx_ref = "txref-" + str(int(time.time()))
                 order = Order.objects.create(
                     user=request.user if request.user.is_authenticated else None,
                     full_name=shipping_form.cleaned_data.get('shipping_full_name', ''),
                     email=email,
                     shipping_address=shipping_address,
                     amount_paid=float(totals),
-                    tx_ref="txref-" + str(int(time.time()))
+                    tx_ref=tx_ref
                 )
                 logger.debug(f"Created order: id={order.id}, tx_ref={order.tx_ref}, amount_paid={order.amount_paid}, email={order.email}")
-                
+                if not order.tx_ref:
+                    logger.error(f"Failed to set tx_ref for order: id={order.id}")
+                    messages.error(request, "Failed to generate transaction reference. Please try again.")
+                    return redirect('home')
                 # Create OrderItem entries
                 for product, qty in zip(cart_products, quantities.values()):
                     price = float(product.sale_price if product.is_sale else product.price)
@@ -363,13 +367,18 @@ def payment_page(request):
             logger.error(f"Invalid order email: {order.email}")
             messages.error(request, "Invalid email address. Please provide a valid email.")
             return redirect('home')
+        if not order.tx_ref:
+            logger.error(f"Missing tx_ref for order: id={order_id}")
+            messages.error(request, "Transaction reference is missing. Please try again.")
+            return redirect('home')
         
         logger.debug(f"Order data: id={order.id}, amount_paid={order.amount_paid}, email={order.email}, full_name={order.full_name}")
         return render(request, 'payment/payment.html', {  
             'order_total': float(order.amount_paid),
             'customer_email': order.email,
             'customer_name': order.full_name or 'Guest',
-            'flutterwave_public_key': settings.FLUTTERWAVE_PUBLIC_KEY
+            'flutterwave_public_key': settings.FLUTTERWAVE_PUBLIC_KEY,
+            'order_tx_ref': order.tx_ref,
         })
     except Order.DoesNotExist:
         logger.error(f"Order not found: order_id={order_id}")
@@ -385,11 +394,16 @@ def payment_success(request):
     if response.status_code == 200 and response.json()['status'] == 'success':
         # Update order status (if using an Order model)
         # Example: Order.objects.filter(tx_ref=tx_ref).update(status='paid')
+        # Clear cart
+        request.session.pop('cart', None)
         # Clear session data
         request.session.pop('order_total', None)
         request.session.pop('customer_email', None)
         request.session.pop('customer_name', None)
         request.session.pop('shipping_id', None)
-        return render(request, 'success.html', {'tx_ref': tx_ref})
+        request.session.pop('order_id', None)
+        return render(request, 'payment/payment_success.html', {'tx_ref': tx_ref})
     else:
-        return render(request, 'error.html', {'error': 'Payment verification failed'})
+        return render(request, 'payment/error.html', {'error': 'Payment verification failed'})
+    
+ 
