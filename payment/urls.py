@@ -9,7 +9,7 @@ urlpatterns = [
    path('not_shipped_dash', views.not_shipped_dash, name='not_shipped_dash'),
    path('orders/<int:pk>/', views.orders, name='orders'),
    path('payment/', views.payment_page, name='payment_page'),
-   path('/payment/payment_success/', views.payment_success, name='payment_success'),
+   path('payment_success/', views.payment_success, name='payment_success'),
 
 
 ]
