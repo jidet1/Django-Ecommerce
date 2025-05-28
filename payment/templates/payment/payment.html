@@ -1,11 +1,5 @@
-
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Flutterwave Payment</title>
-    <script src="https://checkout.flutterwave.com/v3.js"></script>
-</head>
-<body>
+{% extends 'base.html' %}
+{% block content %}
     <h2>Pay with Flutterwave</h2>
     <p>Total: ₦{{ order_total|floatformat:2 }}</p>
     <p>Email: {{ customer_email }}</p>
@@ -76,5 +70,4 @@
 }
 
     </script>
-</body>
-</html>
+{% endblock %}
